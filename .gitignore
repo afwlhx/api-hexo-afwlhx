@@ -1,0 +1,54 @@
+# Visual Studio 临时文件
+.vs/
+
+# 编译输出目录
+[Bb]in/
+[Oo]bj/
+
+# NuGet 包目录
+packages/
+
+# .NET Core 本地工具目录
+/.tools/
+
+# Visual Studio 用户设置文件
+*.user
+*.suo
+*.userosscache
+
+# Rider/ReSharper 缓存
+.idea/
+*.DotSettings
+
+# 日志文件
+logs/
+*.log
+
+# 运行时生成的文件 (如 ASP.NET Core)
+appsettings.Development.json
+/app_Data/
+
+# 单元测试输出
+TestResult/
+*.coverage
+*.testlog
+
+# 发布目录
+publish/
+
+# 环境变量文件
+.env
+*.secrets.json
+
+# VS Code
+.vscode/
+!.vscode/tasks.json
+!.vscode/launch.json
+
+# macOS
+.DS_Store
+
+# 其他 ( 根据代码而定 )
+uploads/
+
+wwwroot/
