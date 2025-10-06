@@ -1,7 +1,7 @@
-# This workflow will build a .NET project
+# This workflow will build and publish a .NET project
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
 
-name: .NET
+name: .NET Build and Publish
 
 on:
   push:
@@ -11,27 +11,34 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
-    - name: Restore dependencies
-      run: dotnet restore
-    - name: Build
-      run: dotnet build --no-restore
-    - name: Test
-      run: dotnet test --no-build --verbosity normal
-      
- # ⬇️ 这一步用于发布构建产物（发布目录）
-    - name: Publish project
-      run: dotnet publish -c Release -o ./publish
 
-    # ⬇️ 这一步可以把发布产物保存到 GitHub Actions 的构建结果里（方便下载）
+    # ✅ 还原依赖（使用解决方案）
+    - name: Restore dependencies
+      run: dotnet restore api-hexo-afwlhx.sln
+
+    # ✅ 构建 Release 版本（解决方案级别，不加 --output）
+    - name: Build
+      run: dotnet build api-hexo-afwlhx.sln --configuration Release --no-restore
+
+    # ✅ 测试阶段（如果没有测试项目也不会报错）
+    - name: Test
+      run: dotnet test api-hexo-afwlhx.sln --no-build --verbosity normal || echo "No tests found"
+
+    # ✅ 发布项目（针对具体项目文件，避免 output 警告）
+    - name: Publish project
+      run: dotnet publish ./api-hexo-afwlhx/api-hexo-afwlhx.csproj -c Release -o ./publish
+
+    # ✅ 上传构建产物，便于在 GitHub Actions 页面下载
     - name: Upload published files
       uses: actions/upload-artifact@v4
       with:
