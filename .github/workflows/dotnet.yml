@@ -1,12 +1,7 @@
-# This workflow will build and publish a .NET project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
-
-name: .NET Build and Publish
+name: .NET Build, Publish & Release
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
     branches: [ "main" ]
 
 jobs:
@@ -22,25 +17,47 @@ jobs:
       with:
         dotnet-version: 8.0.x
 
-    # ✅ 还原依赖（使用解决方案）
+    # ✅ 还原依赖
     - name: Restore dependencies
       run: dotnet restore api-hexo-afwlhx.sln
 
-    # ✅ 构建 Release 版本（解决方案级别，不加 --output）
+    # ✅ 构建 Release
     - name: Build
       run: dotnet build api-hexo-afwlhx.sln --configuration Release --no-restore
 
-    # ✅ 测试阶段（如果没有测试项目也不会报错）
+    # ✅ 测试
     - name: Test
       run: dotnet test api-hexo-afwlhx.sln --no-build --verbosity normal || echo "No tests found"
 
-    # ✅ 发布项目（针对具体项目文件，避免 output 警告）
+    # ✅ 发布具体项目（不要对 .sln 使用 -o）
     - name: Publish project
       run: dotnet publish ./api-hexo-afwlhx/api-hexo-afwlhx.csproj -c Release -o ./publish
 
-    # ✅ 上传构建产物，便于在 GitHub Actions 页面下载
-    - name: Upload published files
+    # ✅ 压缩发布结果为 zip
+    - name: Compress published files
+      run: |
+        cd ./publish
+        zip -r ../publish.zip ./*
+        cd ..
+
+    # ✅ 上传构建产物供 Actions 页面下载
+    - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: published-app
-        path: ./publish
+        path: ./publish.zip
+
+    # ✅ 自动创建 GitHub Release 并上传 zip 包
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: release-${{ github.run_number }}
+        name: Release ${{ github.run_number }}
+        body: |
+          🚀 自动构建完成！
+          - 分支: ${{ github.ref_name }}
+          - 提交: ${{ github.sha }}
+          - 构建号: ${{ github.run_number }}
+        files: ./publish.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
