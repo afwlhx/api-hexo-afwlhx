@@ -24,7 +24,7 @@ jobs:
 
     # 3️⃣ 还原依赖
     - name: Restore dependencies
-      run: dotnet restore MyApp.sln
+      run: dotnet restore api-hexo-afwlhx.sln
 
     # 4️⃣ 编译项目（Release 模式）
     - name: Build
