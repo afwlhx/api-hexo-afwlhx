@@ -26,3 +26,14 @@ jobs:
       run: dotnet build --no-restore
     - name: Test
       run: dotnet test --no-build --verbosity normal
+      
+ # ⬇️ 这一步用于发布构建产物（发布目录）
+    - name: Publish project
+      run: dotnet publish -c Release -o ./publish
+
+    # ⬇️ 这一步可以把发布产物保存到 GitHub Actions 的构建结果里（方便下载）
+    - name: Upload published files
+      uses: actions/upload-artifact@v4
+      with:
+        name: published-app
+        path: ./publish
