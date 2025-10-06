@@ -1,107 +1,71 @@
-# ===============================
-# 🏗️ 名称：.NET 构建、发布与发布 Release
-# 当 main 分支有新的提交时自动执行
-# ===============================
-
 name: .NET Build, Publish & Release
 
 on:
   push:
-    branches: [ "main" ]  # 监听 main 分支推送事件
+    branches: [ "main" ]
 
-# ✅ 授权 workflow 有权限创建 Release（默认只读）
 permissions:
-  contents: write
+  contents: write   # 允许创建 Release
 
 jobs:
   build:
-    runs-on: ubuntu-latest  # 使用最新的 Ubuntu 环境
+    runs-on: ubuntu-latest
 
     steps:
-    # ===============================
-    # 1️⃣ 拉取仓库代码
-    # ===============================
+    # 1️⃣ 拉取代码
     - name: Checkout code
       uses: actions/checkout@v4
-      # 说明：把当前 GitHub 仓库的代码检出到 runner 工作目录
 
-    # ===============================
     # 2️⃣ 安装 .NET 8 SDK
-    # ===============================
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 8.0.x  # 指定使用 .NET 8.x 版本
-      # 说明：官方 setup-dotnet 动作会自动安装对应 SDK
+        dotnet-version: 8.0.x
 
-    # ===============================
     # 3️⃣ 还原依赖
-    # ===============================
     - name: Restore dependencies
-      run: dotnet restore api-hexo-afwlhx.sln
-      # 说明：根据 .sln 或 .csproj 文件还原 NuGet 包
+      run: dotnet restore MyApp.sln
 
-    # ===============================
-    # 4️⃣ 编译项目
-    # ===============================
+    # 4️⃣ 编译项目（Release 模式）
     - name: Build
       run: dotnet build api-hexo-afwlhx.sln --configuration Release --no-restore
-      # 说明：编译为 Release 模式（不再重复 restore）
 
-    # ===============================
-    # 5️⃣ 运行测试（如果有）
-    # ===============================
+    # 5️⃣ 执行测试（可选）
     - name: Test
       run: dotnet test api-hexo-afwlhx.sln --no-build --verbosity normal || echo "No tests found"
-      # 说明：
-      # - 若有单元测试会执行
-      # - 若无测试项目则输出提示，不中断流程
 
-    # ===============================
     # 6️⃣ 发布项目
-    # ===============================
     - name: Publish project
       run: dotnet publish ./api-hexo-afwlhx/api-hexo-afwlhx.csproj -c Release -o ./publish
-      # 说明：
-      # - 将编译产物发布到 ./publish 文件夹
-      # - 包含所有依赖文件，可直接部署运行
 
-    # ===============================
-    # 7️⃣ 压缩发布文件
-    # ===============================
+    # 7️⃣ 压缩发布产物
     - name: Compress published files
       run: |
         cd ./publish
-        zip -r ../publish.zip ./*  # 打包为 publish.zip
+        zip -r ../publish.zip ./*
         cd ..
-      # 说明：将所有发布输出压缩，方便上传为 Release 资产
 
-    # ===============================
-    # 8️⃣ 上传构建产物（供其他 workflow 使用）
-    # ===============================
+    # 8️⃣ 上传构建产物
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: published-app  # 上传的名字
-        path: ./publish.zip  # 上传的文件路径
-      # 说明：这一步会在 “Actions -> Artifacts” 中看到 publish.zip 文件
+        name: published-app
+        path: ./publish.zip
 
-    # ===============================
-    # 9️⃣ 自动创建 GitHub Release
-    # ===============================
+    # 9️⃣ 创建 GitHub Release
     - name: Create GitHub Release
       id: create_release
       uses: softprops/action-gh-release@v2
       with:
-        # 动态生成版本号（取提交时间的前10个字符，即日期部分）
-        tag_name: v${{ github.event.head_commit.timestamp[0:10] }}
-        name: 发布版本 ${{ github.event.head_commit.timestamp[0:10] }}
+        # ✅ 自动生成 tag（使用当前日期时间）
+        tag_name: v${{ github.run_number }}-${{ github.ref_name }}
+        name: 自动发布版本 ${{ github.run_number }}
         body: |
-          🚀 自动构建完成！
+          🚀 自动构建发布完成！
           - 分支: ${{ github.ref_name }}
           - 提交: ${{ github.sha }}
-          - 构建时间: ${{ github.event.head_commit.timestamp }}
-        files: ./publish.zip  # 上传的文件作为 Release 附件
+          - 构建编号: ${{ github.run_number }}
+          - 触发时间: ${{ github.event.head_commit.timestamp }}
+        files: ./publish.zip
       env:
-        # GitHub 自动注入的 Token，用于授权创建 Release
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
