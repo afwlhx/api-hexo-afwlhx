@@ -30,11 +30,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseAuthorization();
-
 app.UseCors("AllowAll");
 
-app.MapControllers();
+app.UseAuthorization();
 
 // 自动寻找index.html
 app.UseDefaultFiles();
@@ -42,19 +40,19 @@ app.UseDefaultFiles();
 // 使用静态资源
 app.UseStaticFiles();
 
-// // 处理所有其他请求，返回404.html
-// app.MapFallbackToFile("/404.html");
+app.MapControllers();
 
-// 3. 对未知路径做 404 跳转逻辑（放在最后）
+// 注意：不要用 MapFallbackToFile！
+// 改用一个自定义的中间件来判断是否存在文件
 app.Use(async (context, next) =>
 {
-    await next();
+    await next(); // 让请求先经过前面的管道（包括静态文件、API）
 
-    // 如果返回404，并且不是 /api 开头的请求
-    if (context.Response.StatusCode == 404 && 
-        !context.Request.Path.StartsWithSegments("/api"))
+    // 如果满足以下条件，则返回 404.html
+    if (context.Response.StatusCode == 404 && // 状态码是404
+        !context.Request.Path.StartsWithSegments("/api") && // 不带 /api 路径
+        !Path.HasExtension(context.Request.Path.Value)) // 不含扩展名
     {
-        context.Response.StatusCode = 200; // 改成200，否则有些浏览器不加载
         context.Response.ContentType = "text/html";
         await context.Response.SendFileAsync(Path.Combine(app.Environment.WebRootPath, "404.html"));
     }
